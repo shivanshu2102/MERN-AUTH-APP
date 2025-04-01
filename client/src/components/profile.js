@@ -9,7 +9,7 @@ const Profile = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    // In Profile.js (updated useEffect)
+  
 useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -18,15 +18,15 @@ useEffect(() => {
         
         if (!token) throw new Error('No token found');
         
-        // Try API first
+       
         const res = await axios.get('http://localhost:5000/api/auth/profile', {
           headers: { 'x-auth-token': token }
         });
         
-        setUser(res.data.user || res.data); // Handle both response formats
+        setUser(res.data.user || res.data); 
       } catch (err) {
         console.error('Profile fetch error:', err);
-        // Fallback to local storage
+        
         const localUser = JSON.parse(localStorage.getItem('user'));
         if (localUser) {
           setUser(localUser);

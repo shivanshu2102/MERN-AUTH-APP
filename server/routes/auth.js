@@ -120,7 +120,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    // Return user data without password
+    
     const userData = user.toObject();
     delete userData.password;
 
@@ -139,10 +139,10 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// @route   GET /api/auth/profile
+
 router.get('/profile', protect, async (req, res) => {
   try {
-    // User is already attached to req by protect middleware
+    
     return res.json({
       success: true,
       user: req.user
@@ -156,7 +156,7 @@ router.get('/profile', protect, async (req, res) => {
   }
 });
 
-// Debug route - REMOVE IN PRODUCTION
+
 router.get('/debug-user/:username', async (req, res) => {
   try {
     const user = await User.findOne({ 
