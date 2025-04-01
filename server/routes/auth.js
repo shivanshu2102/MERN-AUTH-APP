@@ -19,24 +19,23 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
       });
     }
 
-    // Check if user exists
-    const existingUser = await User.findOne({ username });
+    // Case-insensitive username check
+    const existingUser = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    });
+
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'Username already exists'
+        message: 'Username already exists (case insensitive check)'
       });
     }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new user
     const user = new User({
       name,
-      username,
-      password: hashedPassword,
+      username: username.toLowerCase(), // Store as lowercase for consistency
+      password, // Will be hashed by pre-save hook
       profileImage: req.file?.path || '',
       hobbies: Array.isArray(hobbies) ? hobbies : [hobbies].filter(Boolean)
     });
@@ -44,24 +43,20 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
     await user.save();
 
     // Create token
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not configured');
-    }
-
     const token = jwt.sign(
       { user: { id: user._id } },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Return response without password
-    const userWithoutPassword = user.toObject();
-    delete userWithoutPassword.password;
+    // Return user data without password
+    const userData = user.toObject();
+    delete userData.password;
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       token,
-      user: userWithoutPassword
+      user: userData
     });
 
   } catch (error) {
@@ -75,7 +70,7 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Signup failed',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -96,11 +91,12 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Find user with password explicitly selected
-    const user = await User.findOne({ username }).select('+password');
-    
+    // Case-insensitive login
+    const user = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    }).select('+password');
+
     if (!user) {
-      console.log('Login attempt for non-existent user:', username);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -108,10 +104,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Compare passwords
-    console.log('Comparing password for user:', username);
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Password match result:', isMatch);
-
+    
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -120,32 +114,27 @@ router.post('/login', async (req, res) => {
     }
 
     // Create token
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not configured');
-    }
-
     const token = jwt.sign(
       { user: { id: user._id } },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Prepare user data without password
+    // Return user data without password
     const userData = user.toObject();
     delete userData.password;
 
-    res.json({
+    return res.json({
       success: true,
       token,
       user: userData
     });
 
   } catch (error) {
-    console.error('Login route error:', error);
-    res.status(500).json({
+    console.error('Login error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Login failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Login failed'
     });
   }
 });
@@ -154,16 +143,35 @@ router.post('/login', async (req, res) => {
 router.get('/profile', protect, async (req, res) => {
   try {
     // User is already attached to req by protect middleware
-    res.json({
+    return res.json({
       success: true,
       user: req.user
     });
   } catch (error) {
     console.error('Profile fetch error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch profile'
     });
+  }
+});
+
+// Debug route - REMOVE IN PRODUCTION
+router.get('/debug-user/:username', async (req, res) => {
+  try {
+    const user = await User.findOne({ 
+      username: { $regex: new RegExp(`^${req.params.username}$`, 'i') }
+    }).select('+password');
+    
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    return res.json({
+      username: user.username,
+      passwordHash: user.password,
+      createdAt: user.createdAt
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
