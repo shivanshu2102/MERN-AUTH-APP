@@ -5,9 +5,9 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true, select: false },
-  profileImage: String,
-  hobbies: [String]
-});
+  profileImage: { type: String, default: '' },
+  hobbies: { type: [String], default: [] }
+}, { timestamps: true }); 
 
 
 UserSchema.pre('save', async function(next) {

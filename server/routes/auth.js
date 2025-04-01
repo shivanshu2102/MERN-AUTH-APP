@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const User = require('../models/user');
 const upload = require('../middleware/upload');
 const { protect } = require('../middleware/auth');
 
@@ -172,6 +172,43 @@ router.get('/debug-user/:username', async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+});
+// @route   PUT /api/auth/profile
+router.put('/profile', protect, upload.single('profile'), async (req, res) => {
+  try {
+    const { name, hobbies } = req.body;
+    const updates = {};
+
+    if (name) updates.name = name;
+    if (hobbies) updates.hobbies = Array.isArray(hobbies) ? hobbies : [hobbies].filter(Boolean);
+    if (req.file) updates.profileImage = req.file.path;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      updates,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Profile update failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
