@@ -125,7 +125,8 @@ const Profile = () => {
                             <div className="profile-image">
                                 <img 
                                     src={`http://localhost:5000/${user.profileImage}`} 
-                                    alt="Profile" 
+                                    alt="Profile"
+                                     
                                 />
                             </div>
                         )}

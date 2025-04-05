@@ -6,12 +6,11 @@ const User = require('../models/user');
 const upload = require('../middleware/upload');
 const { protect } = require('../middleware/auth');
 
-// @route   POST /api/auth/signup
 router.post('/signup', upload.single('profile'), async (req, res) => {
   try {
     const { name, username, password, hobbies } = req.body;
 
-    // Validate required fields
+    
     if (!name || !username || !password) {
       return res.status(400).json({
         success: false,
@@ -19,7 +18,6 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
       });
     }
 
-    // Case-insensitive username check
     const existingUser = await User.findOne({ 
       username: { $regex: new RegExp(`^${username}$`, 'i') }
     });
@@ -31,25 +29,24 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
       });
     }
 
-    // Create new user
+  
     const user = new User({
       name,
-      username: username.toLowerCase(), // Store as lowercase for consistency
-      password, // Will be hashed by pre-save hook
+      username: username.toLowerCase(), 
+      password, 
       profileImage: req.file?.path || '',
       hobbies: Array.isArray(hobbies) ? hobbies : [hobbies].filter(Boolean)
     });
 
     await user.save();
 
-    // Create token
     const token = jwt.sign(
       { user: { id: user._id } },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Return user data without password
+    
     const userData = user.toObject();
     delete userData.password;
 
@@ -62,7 +59,7 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
   } catch (error) {
     console.error('Signup error:', error);
     
-    // Clean up uploaded file if error occurred
+  
     if (req.file) {
       const fs = require('fs');
       fs.unlink(req.file.path, err => {
@@ -78,12 +75,11 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
   }
 });
 
-// @route   POST /api/auth/login
+
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Validate input
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -91,7 +87,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Case-insensitive login
     const user = await User.findOne({ 
       username: { $regex: new RegExp(`^${username}$`, 'i') }
     }).select('+password');
@@ -103,7 +98,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Compare passwords
+    
     const isMatch = await bcrypt.compare(password, user.password);
     
     if (!isMatch) {
@@ -113,7 +108,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Create token
     const token = jwt.sign(
       { user: { id: user._id } },
       process.env.JWT_SECRET,
@@ -174,7 +168,8 @@ router.get('/debug-user/:username', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
-// @route   PUT /api/auth/profile
+
+
 router.put('/profile', protect, upload.single('profile'), async (req, res) => {
   try {
     const { name, hobbies } = req.body;

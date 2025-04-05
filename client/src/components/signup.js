@@ -72,6 +72,7 @@ const Signup = () => {
             if (res.data.token && res.data.user) {
                 localStorage.setItem('token', res.data.token);
                 localStorage.setItem('user', JSON.stringify(res.data.user));
+                window.location.href = '/profile';
                 navigate('/profile');
             } else {
                 throw new Error('Invalid response format');

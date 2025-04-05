@@ -15,7 +15,7 @@ const Login = () => {
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // In Login.js (updated onSubmit)
+  
   const onSubmit = async e => {
     e.preventDefault();
     try {

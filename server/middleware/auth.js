@@ -4,7 +4,7 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-// Ensure upload directory exists
+
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -35,7 +35,7 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Middleware to delete old profile image if it exists
+
 const deleteOldImage = async (req, res, next) => {
     if (req.file && req.user?.profileImage) {
         const oldImagePath = path.join(__dirname, '../', req.user.profileImage);
