@@ -6,11 +6,11 @@ const User = require('../models/user');
 const upload = require('../middleware/upload');
 const { protect } = require('../middleware/auth');
 
+
 router.post('/signup', upload.single('profile'), async (req, res) => {
   try {
     const { name, username, password, hobbies } = req.body;
 
-    
     if (!name || !username || !password) {
       return res.status(400).json({
         success: false,
@@ -29,12 +29,12 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
       });
     }
 
-  
+    // Changed to use filename instead of path
     const user = new User({
       name,
-      username: username.toLowerCase(), 
-      password, 
-      profileImage: req.file?.path || '',
+      username: username.toLowerCase(),
+      password,
+      profileImage: req.file?.filename || '', // 👈 Changed here
       hobbies: Array.isArray(hobbies) ? hobbies : [hobbies].filter(Boolean)
     });
 
@@ -46,7 +46,6 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    
     const userData = user.toObject();
     delete userData.password;
 
@@ -59,7 +58,6 @@ router.post('/signup', upload.single('profile'), async (req, res) => {
   } catch (error) {
     console.error('Signup error:', error);
     
-  
     if (req.file) {
       const fs = require('fs');
       fs.unlink(req.file.path, err => {
@@ -133,22 +131,31 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
 router.get('/profile', protect, async (req, res) => {
   try {
+    const user = await User.findById(req.user.id).select('-password');
     
-    return res.json({
+    // Clean path for Windows/Linux compatibility
+    const cleanProfileImage = user.profileImage 
+      ? `/uploads/${user.profileImage.replace(/\\/g, '/')}`
+      : null;
+
+    res.json({
       success: true,
-      user: req.user
+      user: {
+        ...user.toObject(),
+        profileImage: cleanProfileImage
+      }
     });
   } catch (error) {
     console.error('Profile fetch error:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to fetch profile'
     });
   }
 });
+
 
 
 router.get('/debug-user/:username', async (req, res) => {
@@ -177,7 +184,7 @@ router.put('/profile', protect, upload.single('profile'), async (req, res) => {
 
     if (name) updates.name = name;
     if (hobbies) updates.hobbies = Array.isArray(hobbies) ? hobbies : [hobbies].filter(Boolean);
-    if (req.file) updates.profileImage = req.file.path;
+    if (req.file) updates.profileImage = req.file.filename;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
@@ -185,6 +192,11 @@ router.put('/profile', protect, upload.single('profile'), async (req, res) => {
       { new: true, runValidators: true }
     ).select('-password');
 
+    //////// Clean path for Windows/Linux compatibility
+    const userResponse = updatedUser.toObject();
+    if (userResponse.profileImage) {
+      userResponse.profileImage = `/uploads/${userResponse.profileImage.replace(/\\/g, '/')}`;
+    }
     if (!updatedUser) {
       return res.status(404).json({
         success: false,

@@ -112,22 +112,24 @@ const Profile = () => {
     };
 
     if (loading) return <div className="loading">Loading...</div>;
-
     return (
         <div className="profile-container">
-            <h1>Profile</h1>
-            {error && <p className="error">{error}</p>}
-            
-            {!isEditing ? (
-                <>
-                    <div className="profile-info">
-                        {user.profileImage && (
-                            <div className="profile-image">
-                                <img 
-                                    src={`http://localhost:5000/${user.profileImage}`} 
-                                    alt="Profile"
-                                     
-                                />
+          <h1>Profile</h1>
+          {error && <p className="error">{error}</p>}
+          
+          {!isEditing ? (
+            <>
+              <div className="profile-info">
+                {user.profileImage && (
+                  <div className="profile-image">
+                  <img
+  src={`http://localhost:5000${user.profileImage}`}
+  alt="Profile"
+  onError={(e) => {
+    e.target.onerror = null;
+    e.target.src = '/default-profile.png';
+  }}
+/>
                             </div>
                         )}
                         <div className="profile-details">

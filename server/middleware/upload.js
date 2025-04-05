@@ -13,9 +13,9 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: function(req, file, cb) {
-    // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
+    // Return ONLY THE FILENAME (no path)
     cb(null, file.fieldname + '-' + uniqueSuffix + ext);
   }
 });
