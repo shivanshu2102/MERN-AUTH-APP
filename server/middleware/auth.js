@@ -12,13 +12,13 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
       const uploadPath = path.join(__dirname, '../uploads');
-      // ...
+      
     },
     filename: function(req, file, cb) {
-      // Ensure clean filename without path
+    
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname);
-      cb(null, `profile-${uniqueSuffix}${ext}`); // 👈 No path in filename
+      cb(null, `profile-${uniqueSuffix}${ext}`); 
     }
   });
 
